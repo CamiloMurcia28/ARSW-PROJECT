@@ -1,84 +1,7 @@
-var boardApp = (function () {
+const boardApp = (function () {
 
     const ROWS = 10;
     const COLS = 15;
-    let tanks = new Map();
-    let gameBoard;
-    let username;
-    let userTank;
-    var stompClient;
-    var lastPosition;
-
-    function initializeBoard() {
-        const board = document.getElementById('gameBoard');
-        board.innerHTML = '';
-        for (let y = 0; y < ROWS; y++) {
-            for (let x = 0; x < COLS; x++) {
-                const cell = document.createElement('div');
-                cell.className = 'cell';
-                if (gameBoard[y][x] === '1') {
-                    cell.classList.add('wall');
-                }
-                board.appendChild(cell);
-            }
-        }
-    }
-
-    function getBoard() {
-        gameBoard = [];
-        return new Promise((resolve, reject) => {
-            $.get("/api/tanks/board", function (data) {
-                gameBoard = data;
-                resolve();
-            }).fail(function () {
-                alert("Failed to get board");
-                reject();
-            });
-        });
-    }
-
-    function getTanks() {
-        return new Promise((resolve, reject) => {
-            $.get("/api/tanks", function (data) {
-                data.forEach(tank => {
-                    tanks.set(tank.name, tank);
-                });
-                resolve();
-            }).fail(function () {
-                alert("There are no tanks");
-                reject();
-            });
-        });
-    }
-
-    function getTank() {
-        return new Promise((resolve, reject) => {
-            $.get(`/api/tanks/${username}`, function (tank) {
-                userTank = tank;
-                resolve();
-            }).fail(function () {
-                alert("There is no user with that name");
-                reject();
-            });
-        });
-    }
-
-    function placeTanks() {
-        tanks.forEach((value, key) => {
-            gameBoard[value.posy][value.posx] = value.name;
-        });
-        const cells = document.getElementsByClassName('cell');
-        tanks.forEach((data) => {
-            const tankElement = document.createElement('div');
-            tankElement.className = 'tank';
-            tankElement.id = `tank-${data.name}`;
-            tankElement.style.backgroundColor = data.color;
-            const cellIndex = data.posy * COLS + data.posx;
-            cells[cellIndex].appendChild(tankElement);
-        });
-    }
-
-    let isMoving = false; // Estado de bloqueo
 
     function moveTank(direction) {
         // if (!userTank || isMoving)
@@ -123,12 +46,6 @@ var boardApp = (function () {
             newPosY:newPosY,
             rotation:dir
         }));
-        // stompClient.send(`/topic/matches/1/movement`,{}, JSON.stringify({
-        //     name:username,
-        //     newPosX:newPosX,
-        //     newPosY:newPosY,
-        //     rotation:dir
-        // }));
     }
 
     function rotateTank(tankId, degrees) {
@@ -136,19 +53,6 @@ var boardApp = (function () {
         if (tank) {
             tank.style.transform = `translate(-50%, -50%) rotate(${degrees}deg)`;
         }
-    }
-
-    function getUsername() {
-        return new Promise((resolve, reject) => {
-            $.get("/api/tanks/username", function (data) {
-                username = data;
-                console.log("Player: " + username)
-                resolve();
-            }).fail(function () {
-                alert("There is no user with that name");
-                reject();
-            });
-        });
     }
 
     function updateBoard(username) {
@@ -201,24 +105,6 @@ var boardApp = (function () {
         }
     }
 
-
-    document.addEventListener('keydown', (e) => {
-        switch (e.key) {
-            case 'a':
-                moveTank('left');
-                break;
-            case 'd':
-                moveTank('right');
-                break;
-            case 'w':
-                moveTank('up');
-                break;
-            case 's':
-                moveTank('down');
-                break;
-        }
-    });
-
     function updateTankPosition(name, newPosX, newPosY, rotation) {
         const tankElement = document.getElementById(`tank-${name}`);
         if (tankElement) {
@@ -227,60 +113,6 @@ var boardApp = (function () {
             cells[newCellIndex].appendChild(tankElement);
             rotateTank(name, rotation);
         }
-    }
-
-
-
-    var subscribe = function () {
-        console.info('Connecting to WS...');
-        var socket = new SockJS('/stompendpoint');
-        stompClient = Stomp.over(socket);
-        stompClient.connect({}, function (frame) {
-            console.log('Connected: ' + frame);
-
-            stompClient.subscribe(`/topic/matches/1/movement`, function (eventbody) {
-                const updatedTank = JSON.parse(eventbody.body);
-                const name = updatedTank.name;
-                if(name === username){
-                    userTank = updatedTank;
-                }
-                const newPosX = updatedTank.posx;
-                const newPosY = updatedTank.posy;
-                const rotation = updatedTank.rotation;
-                updateTankPosition(name, newPosX, newPosY, rotation);
-            });
-
-            stompClient.subscribe(`/topic/matches/1/bulletAnimation`, function (eventbody) {
-                const bulletData = JSON.parse(eventbody.body);
-                const bulletId = bulletData.bulletId;
-                const startX = bulletData.startX;
-                const startY = bulletData.startY;
-                const direction = bulletData.direction;
-                const tankId = bulletData.tankId;
-                animateBullet(bulletId, startX, startY, direction, tankId);
-            });
-
-            stompClient.subscribe('/topic/matches/1/bullets', function (eventbody) {
-                gameBoard = JSON.parse(eventbody.body);
-                updateTanksBoard();
-            });
-
-            stompClient.subscribe('/topic/matches/1/collisionResult', function (eventbody) {
-                const data = JSON.parse(eventbody.body);
-                const tankDeleted = data.tank;
-                lastPosition = {x: data.x, y: data.y};
-                tanks.delete(tankDeleted);
-                if(tankDeleted === username){
-                    username = null;
-                }
-            });
-
-            stompClient.subscribe('/topic/matches/1/winner', function (message) {
-                const winner = JSON.parse(message.body);
-                displayWinner(winner);
-            });
-
-        });
     }
 
     const winnerModal = document.getElementById("winnerModal");
@@ -298,97 +130,72 @@ var boardApp = (function () {
     let bullets = new Map();
 
     function shoot() {
-        stompClient.send(`/app/${username}/shoot`, {}, JSON.stringify());
+        const bulletId = `bullet-${Date.now()}`;
+        console.log(JSON.stringify(bulletId));
+        stompClient.send(`/app/${username}/shoot`, {}, bulletId);
         const startX = userTank.posx;
         const startY = userTank.posy;
         const direction = userTank.rotation;
-        const bulletId = `bullet-${Date.now()}`;
         const bulletData = {
             bulletId: bulletId,
             startX: startX,
             startY: startY,
             direction: direction,
-            tankId: username
+            tankId: username,
+            alive: true
         }
-        //stompClient.send(`/topic/matches/1/bulletAnimation`, {}, JSON.stringify(bulletData));
         if(username){
             stompClient.send(`/topic/matches/1/bulletAnimation`, {}, JSON.stringify(bulletData));
         }
     }
 
     function animateBullet(bulletId, startX, startY, direction, tankId) {
-        // Crear el elemento de la bala
         const bullet = document.createElement('div');
         bullet.className = 'bullet';
-        bullet.id = `bullet-${bulletId}`;
-
-        // Obtener las celdas del tablero
+        bullet.id = `${bulletId}`;
         const cells = document.getElementsByClassName('cell');
         let currentX = startX;
         let currentY = startY;
-
-        // Colocar la bala en la posición inicial
+    
         const initialCellIndex = currentY * COLS + currentX;
         if (initialCellIndex < 0 || initialCellIndex >= cells.length) {
             console.error("Posición inicial fuera de los límites:", initialCellIndex);
             return;
         }
         cells[initialCellIndex].appendChild(bullet);
-
+    
         let dx = 0, dy = 0;
         switch (direction) {
-            case 0: // Derecha
-                dx = 1;
-                break;
-            case 90: // Abajo
-                dy = 1;
-                break;
-            case 180: // Izquierda
-                dx = -1;
-                break;
-            case - 90: // Arriba
-                dy = -1;
-                break;
+            case 0: dx = 1; break; // Derecha
+            case 90: dy = 1; break; // Abajo
+            case 180: dx = -1; break; // Izquierda
+            case -90: dy = -1; break; // Arriba
         }
-
-        const intervalId = setInterval(() => {
-            bullet.remove();
-            currentX += dx;
-            currentY += dy;
-
-            if (currentX < 0 || currentX >= COLS || currentY < 0 || currentY >= ROWS) {
-                clearInterval(intervalId);
-                bullets.delete(bulletId);
-                return;
-            }
-
-            const newCellIndex = currentY * COLS + currentX;
-            const cellContent = gameBoard[currentY][currentX];
-            if (lastPosition != null) {
-                if (currentX == lastPosition.x && currentY == lastPosition.y) {
-                    clearInterval(intervalId);
-                    bullets.delete(bulletId);
-                    lastPosition = null;
+        
+        function step() {
+            if(bullets.get(bulletId).alive){
+                bullet.remove(); // Elimina la bala de la celda actual
+                currentX += dx;
+                currentY += dy;
+        
+                // Verifica límites del tablero
+                if (currentX < 0 || currentX >= COLS || currentY < 0 || currentY >= ROWS) {
+                    bullets.delete(bulletId); // Elimina la referencia de la bala
                     return;
                 }
+        
+                const newCellIndex = currentY * COLS + currentX;
+                const cellContent = gameBoard[currentY][currentX];
+        
+                if (cellContent === '0') {
+                    cells[newCellIndex].appendChild(bullet);
+                    const timeoutId = setTimeout(step, 500);
+                    bullets.get(bulletId).timeoutId = timeoutId;
+                }
             }
-
-            if(cellContent === '0'){
-                cells[newCellIndex].appendChild(bullet);
-            }
-            else{ 
-                clearInterval(intervalId);
-                bullets.delete(bulletId);
-                return;
-            }
-
-        }, 500);
-
-        if (tanks.size <= 1) {
-            stompClient.send('/app/matches/1/winner', {}, JSON.stringify());
+            
         }
-
-        bullets.set(bulletId, intervalId);
+        step();
     }
     
 
@@ -451,24 +258,163 @@ var boardApp = (function () {
         }
     `;
     document.head.appendChild(styles);
+    
+    function stopBullet(bulletId) {
+        clearTimeout(bullets.get(bulletId).timeoutId); // Cancela el timeout
+        //bullets.delete(bulletId); // Elimina la referencia del Map
+        console.log(`Animación de la bala ${bulletId} detenida.`);
+        
+    }
 
+//////////////
 
-    // Agregar evento de disparo (tecla espaciadora)
-    document.addEventListener('keydown', (e) => {
-        if (e.code === 'Space') {
-            shoot();
+    const api = apiClient;
+    let username;
+    let userTank;
+    let gameBoard = [];
+    let tanks = new Map();
+    let stompClient;
+
+    function placeTanks() {
+        tanks.forEach((value, key) => {
+            gameBoard[value.posy][value.posx] = value.name;
+        });
+        const cells = document.getElementsByClassName('cell');
+        tanks.forEach((data) => {
+            const tankElement = document.createElement('div');
+            tankElement.className = 'tank';
+            tankElement.id = `tank-${data.name}`;
+            tankElement.style.backgroundColor = data.color;
+            const cellIndex = data.posy * COLS + data.posx;
+            cells[cellIndex].appendChild(tankElement);
+        });
+    }
+
+    function subscribe(){
+        console.info('Connecting to WS...');
+        var socket = new SockJS('/stompendpoint');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (frame) {
+            console.log('Connected: ' + frame);
+
+            stompClient.subscribe(`/topic/matches/1/movement`, function (eventbody) {
+                const updatedTank = JSON.parse(eventbody.body);
+                const name = updatedTank.name;
+                if(name === username){
+                    userTank = updatedTank;
+                }
+                const newPosX = updatedTank.posx;
+                const newPosY = updatedTank.posy;
+                const rotation = updatedTank.rotation;
+                updateTankPosition(name, newPosX, newPosY, rotation);
+            });
+
+            stompClient.subscribe(`/topic/matches/1/bulletAnimation`, function (eventbody) {
+                const bulletData = JSON.parse(eventbody.body);
+                const bulletId = bulletData.bulletId;
+                const startX = bulletData.startX;
+                const startY = bulletData.startY;
+                const direction = bulletData.direction;
+                const tankId = bulletData.tankId;
+                bullets.set(bulletId, bulletData);
+                animateBullet(bulletId, startX, startY, direction, tankId);
+            });
+
+            stompClient.subscribe('/topic/matches/1/collisionResult', function (eventbody) {
+                const data = JSON.parse(eventbody.body);
+                const tankDeleted = data.tank;
+                tanks.delete(tankDeleted);
+                //gameBoard[data.y][data.x] = 0;
+                const bulletId = data.bulletId;
+                const tankElement = document.getElementById(`tank-${tankDeleted}`);
+                $(`#${bulletId}`).remove();
+                tankElement.remove();
+                bullets.get(bulletId).alive = false;
+                stopBullet(bulletId);
+                if(tankDeleted === username){
+                    username = null;
+                }
+            });
+
+            stompClient.subscribe('/topic/matches/1/winner', function (message) {
+                const winner = JSON.parse(message.body);
+                displayWinner(winner);
+            });
+
+        });
+    }
+
+    function addListeners(){
+        document.addEventListener('keydown', (e) => {
+            switch (e.key) {
+                case 'a':
+                    moveTank('left');
+                    break;
+                case 'd':
+                    moveTank('right');
+                    break;
+                case 'w':
+                    moveTank('up');
+                    break;
+                case 's':
+                    moveTank('down');
+                    break;
+            }
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.code === 'Space') {
+                shoot();
+            }
+        });
+    }
+
+    function initializeBoard() {
+        const board = document.getElementById('gameBoard');
+        board.innerHTML = '';
+        for (let y = 0; y < ROWS; y++) {
+            for (let x = 0; x < COLS; x++) {
+                const cell = document.createElement('div');
+                cell.className = 'cell';
+                if (gameBoard[y][x] === '1') {
+                    cell.classList.add('wall');
+                }
+                board.appendChild(cell);
+            }
         }
-    });
+    }
+
+    function init(){
+        api.getUsername()
+            .then(function(data){
+                username = data;
+            })
+
+        .then(() => api.getBoard())
+            .then(function(board){
+                gameBoard = board;
+            })
+        
+        .then(() => initializeBoard())
+
+        .then(() => api.getTank(username))
+            .then(function(tank){
+                userTank = tank;
+            })
+
+        .then(() => api.getTanks(tanks))
+            .then(function(data){
+                data.forEach(tank => {
+                    tanks.set(tank.name, tank);
+                });
+            })
+
+        .then(() => placeTanks())
+        .then(() => subscribe())
+        .then(() => addListeners());
+    }
 
     return {
-        init: function () {
-            getUsername()
-                    .then(() => getBoard())
-                    .then(() => initializeBoard())
-                    .then(() => getTank())
-                    .then(() => getTanks())
-                    .then(() => placeTanks())
-                    .then(() => subscribe());
-        }
+        init: init,
     }
 })();

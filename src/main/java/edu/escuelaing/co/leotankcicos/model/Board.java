@@ -1,10 +1,16 @@
 package edu.escuelaing.co.leotankcicos.model;
 
-import org.springframework.stereotype.Component;
+import org.springframework.data.annotation.Id;
+import org.springframework.data.annotation.Transient;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Component
+@Document(collection = "boards")
 public class Board {
+    @Id
+    private String id;
     private String[][] boxes;
+
+    @Transient
     private final Object[][] locks;
 
     public Board() {
@@ -31,7 +37,15 @@ public class Board {
             {"1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1", "1"}
         };
     }
+    
+    public String getId(){
+        return this.id;
+    }
 
+    public void setId(String id){
+        this.id = id;
+    }
+    
     public String getValue(int x, int y) {
         return boxes[y][x];
     }

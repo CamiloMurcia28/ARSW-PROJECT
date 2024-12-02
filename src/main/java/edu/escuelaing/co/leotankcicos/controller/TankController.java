@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -96,7 +95,7 @@ public class TankController {
 
     @GetMapping("/board")
     public ResponseEntity<String[][]> getBoard() {
-        String[][] board = tankService.getBoard();
+        String[][] board = tankService.getBoardBoxes();
         if (board == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
@@ -104,7 +103,7 @@ public class TankController {
     }
 
     @GetMapping("/bullets/{bulletId}/position")
-    public ResponseEntity<Bullet> getBulletPosition(@PathVariable int bulletId) {
+    public ResponseEntity<Bullet> getBulletPosition(@PathVariable String bulletId) {
         Bullet bullet = tankService.getBulletPosition(bulletId);
         if (bullet == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
@@ -113,8 +112,9 @@ public class TankController {
     }
 
     @MessageMapping("/{username}/shoot")
-    public void handleShootEvent(@DestinationVariable String username) {
-        tankService.shoot(username);
+    public void handleShootEvent(@DestinationVariable String username, @RequestBody String bulletId) {
+        System.out.println(bulletId);
+        tankService.shoot(username, bulletId);
     }
 
     @MessageMapping("/matches/1/winner")
