@@ -47,13 +47,8 @@ class TankServiceTest {
 
     @BeforeEach
     void setUp() {
-        // Inicializamos los mocks
         MockitoAnnotations.openMocks(this);
-
-        // Limpiar el estado de los repositorios mockeados
         reset(tankRepository, bulletRepository, boardRepository);
-
-        // Crear y guardar un tablero en el repositorio simulado
         Board board = new Board();
         board.setId("board1");
         when(boardRepository.save(any(Board.class))).thenReturn(board);
@@ -72,62 +67,59 @@ class TankServiceTest {
     /*PARA EL SAVETANK */
      @Test
     void testSaveTank_HashMismatch() throws Exception {
-        // Datos de entrada
+
         String username = "Tank1";
         String receivedHash = "wrongHash";
 
-        // Comportamiento simulado: el hash no coincide
+  
         String expectedHash = calculateHash(username);
         assertNotEquals(expectedHash, receivedHash, "El hash recibido es incorrecto.");
 
-        // Llamada al método
+
         Exception exception = assertThrows(Exception.class, () -> {
             tankService.saveTank(username, receivedHash);
         });
 
-        // Verificar el mensaje de la excepción
+
         assertEquals("El hash del mensaje no coincide. El mensaje puede haber sido alterado.", exception.getMessage());
     }
 
     @Test
     void testSaveTank_RoomFull() throws Exception {
-        // Datos de entrada
+  
         String username = "Tank2";
         String receivedHash = calculateHash(username);
 
-        // Comportamiento simulado: la sala está llena
-        when(tankRepository.count()).thenReturn(10L);  // Suponiendo que el máximo de jugadores es 10
 
-        // Llamada al método
+        when(tankRepository.count()).thenReturn(10L);
+
         Exception exception = assertThrows(Exception.class, () -> {
             tankService.saveTank(username, receivedHash);
         });
 
-        // Verificar el mensaje de la excepción
+    
         assertEquals("The room is full", exception.getMessage());
     }
 
     @Test
     void testSaveTank_TankAlreadyExists() throws Exception {
-        // Datos de entrada
+
         String username = "Tank1";
         String receivedHash = calculateHash(username);
 
-        // Comportamiento simulado: el tanque ya existe
         when(tankRepository.findById(username)).thenReturn(java.util.Optional.of(new Tank(0, 0, "Red", 0, username)));
 
-        // Llamada al método
+
         Exception exception = assertThrows(Exception.class, () -> {
             tankService.saveTank(username, receivedHash);
         });
 
-        // Verificar el mensaje de la excepción
+
         assertEquals("Tank with this name already exists or is invalid", exception.getMessage());
     }
 
     @Test
     void testSaveTank_InvalidName() throws Exception {
-        // Datos de entrada
         String username = "1";  // Nombre inválido
         String receivedHash = calculateHash(username);
 
