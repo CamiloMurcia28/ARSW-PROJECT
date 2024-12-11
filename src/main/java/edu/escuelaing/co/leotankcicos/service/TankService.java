@@ -92,7 +92,10 @@ public class TankService {
             return null;
         }
         String[][] boxes = board.getBoxes();
-        int firstX, firstY, secondX, secondY;
+        int firstX;
+        int firstY; 
+        int secondX; 
+        int secondY;
         if (y * boxes[0].length + x <= newY * boxes[0].length + newX) {
             firstX = x;
             firstY = y;
@@ -158,7 +161,6 @@ public class TankService {
                     username
             );
             bulletRepository.save(bullet);
-            //activeBullets.put(bullet.getId(), savedBullet);
         }
         startBulletMovement(bullet);
         return bullet;
@@ -166,7 +168,6 @@ public class TankService {
 
     public Bullet getBulletPosition(String bulletId) {
         return bulletRepository.findById(bulletId).orElse(null);
-        //return activeBullets.get(bulletId);
     }
 
     private void startBulletMovement(Bullet bullet) {
@@ -220,11 +221,6 @@ public class TankService {
     private boolean isOutOfBounds(int x, int y) {
         String[][] boxes = board.getBoxes();
         return x < 0 || x >= boxes[0].length || y < 0 || y >= boxes.length || boxes[y][x].equals("1");
-    }
-
-    private boolean checkCollision(Bullet bullet, Tank tank) {
-        return Math.abs(tank.getPosx() - bullet.getX()) < 1 
-            && Math.abs(tank.getPosy() - bullet.getY()) < 1;
     }
 
     private void handleCollision(Bullet bullet, Tank tank) {
