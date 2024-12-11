@@ -192,8 +192,6 @@ class TankServiceTest {
     public void testUpdateTankPosition_TankNotInOriginalPosition() throws Exception {
         String username = "Tank1";
         int x = 1, y = 4, newX = 2, newY = 4, rotation = 90;
-    
-      
         Tank mockTank = new Tank(x, y, "#fa0a0a", 0, username);
         when(tankRepository.findById(username)).thenReturn(Optional.of(mockTank));
     
@@ -210,8 +208,6 @@ class TankServiceTest {
         }
     
         mockBoxes[newY][newX] = username; 
-    
-   
         Board mockBoard = mock(Board.class);
         when(mockBoard.getBoxes()).thenReturn(mockBoxes); 
         when(boardRepository.findAll()).thenReturn(List.of(mockBoard));
