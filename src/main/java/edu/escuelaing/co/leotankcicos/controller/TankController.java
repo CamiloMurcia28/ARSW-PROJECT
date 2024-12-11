@@ -33,10 +33,10 @@ public class TankController {
         this.tankService = tankService;
     }
 
-    // @GetMapping("/")
-    // public ResponseEntity<?> ok(){
-    //     return new ResponseEntity(HttpStatus.OK);
-    // }
+    @GetMapping("/")
+    public ResponseEntity<?> ok(){
+         return new ResponseEntity(HttpStatus.OK);
+    }
 
     //Crea los tanques
     @PostMapping("/api/tanks/loginTank")
