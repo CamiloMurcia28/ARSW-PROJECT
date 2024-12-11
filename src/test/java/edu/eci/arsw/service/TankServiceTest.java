@@ -33,25 +33,18 @@ import edu.escuelaing.co.leotankcicos.service.TankService;
 
 class TankServiceTest {
 
-    // Mocks de los repositorios
     @Mock
     private TankRepository tankRepository;
-
     @Mock
     private BulletRepository bulletRepository;
-
     @Mock
     private BoardRepository boardRepository;
-
-    // Mock del servicio SimpMessagingTemplate (si es necesario)
     @Mock
     private SimpMessagingTemplate msgt;
 
-    // El servicio que vamos a probar
     @InjectMocks
     private TankService tankService;
 
-    // Inicialización de los mocks antes de cada prueba
     @BeforeEach
     void setUp() {
         // Inicializamos los mocks
