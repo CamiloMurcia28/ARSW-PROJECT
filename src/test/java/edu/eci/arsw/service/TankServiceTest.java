@@ -120,15 +120,15 @@ class TankServiceTest {
 
     @Test
     void testSaveTank_InvalidName() throws Exception {
-        String username = "1";  // Nombre inválido
+        String username = "1"; 
         String receivedHash = calculateHash(username);
 
-        // Llamada al método
+    
         Exception exception = assertThrows(Exception.class, () -> {
             tankService.saveTank(username, receivedHash);
         });
 
-        // Verificar el mensaje de la excepción
+    
         assertEquals("Tank with this name already exists or is invalid", exception.getMessage());
     }
 
@@ -193,65 +193,34 @@ class TankServiceTest {
         String username = "Tank1";
         int x = 1, y = 4, newX = 2, newY = 4, rotation = 90;
     
-        // Mock del tanque en el repositorio (posición original)
+      
         Tank mockTank = new Tank(x, y, "#fa0a0a", 0, username);
         when(tankRepository.findById(username)).thenReturn(Optional.of(mockTank));
     
-        // Simulamos el estado del tablero con un array 2D de casillas
-        String[][] mockBoxes = new String[5][5]; // Tamaño de tablero 5x5
+       
+        String[][] mockBoxes = new String[5][5]; 
         for (int i = 0; i < mockBoxes.length; i++) {
             for (int j = 0; j < mockBoxes[i].length; j++) {
                 if (i == y && j == x) {
-                    mockBoxes[i][j] = username;  // Colocamos el nombre del tanque en la casilla original
+                    mockBoxes[i][j] = username;  
                 } else {
-                    mockBoxes[i][j] = "0";  // Las demás casillas están vacías
+                    mockBoxes[i][j] = "0";  
                 }
             }
         }
     
-        // Simulamos que la casilla de destino (newX, newY) está ocupada por el tanque
-        mockBoxes[newY][newX] = username;  // Simulamos que el tanque se movió a la nueva posición
+        mockBoxes[newY][newX] = username; 
     
-        // Mock del tablero
+   
         Board mockBoard = mock(Board.class);
-        when(mockBoard.getBoxes()).thenReturn(mockBoxes); // Retorna el estado simulado del tablero
+        when(mockBoard.getBoxes()).thenReturn(mockBoxes); 
         when(boardRepository.findAll()).thenReturn(List.of(mockBoard));
-    
-        // Ejecutamos el método de actualización, lo que debería lanzar la excepción
+   
         Exception exception = assertThrows(Exception.class, () -> {
             tankService.updateTankPosition(username, x, y, newX, newY, rotation);
         });
     
-        // Verificamos que la excepción correcta sea lanzada
         assertEquals("Tank is no longer in the original position", exception.getMessage());
     }
-
-    // @Test
-    // public void testCheckVictory_SingleTank() {
-    //     // Setup
-    //     Tank tank = new Tank(1, 8, "#fa0a0a", 100, "tank1");
-    //     when(tankRepository.findAll()).thenReturn(Collections.singletonList(tank));
-
-    //     // Execute
-    //     Tank result = tankService.checkVictory();
-
-    //     // Assert
-    //     assertNotNull(result);
-    //     assertEquals("tank1", result.getName());
-    // }
-
-    // @Test
-    // public void testCheckVictory_MultipleTanks() {
-    //     // Setup
-    //     Tank tank1 = new Tank(1, 8, "#fa0a0a", 100, "tank1");
-    //     Tank tank2 = new Tank(2, 9, "#00ff00", 100, "tank2");
-    //     when(tankRepository.findAll()).thenReturn(Arrays.asList(tank1, tank2));
-
-    //     // Execute
-    //     Tank result = tankService.checkVictory();
-
-    //     // Assert
-    //     assertNull(result);
-    // }
 
 }
