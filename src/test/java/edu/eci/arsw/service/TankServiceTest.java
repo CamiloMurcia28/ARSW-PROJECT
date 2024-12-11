@@ -70,11 +70,8 @@ class TankServiceTest {
 
         String username = "Tank1";
         String receivedHash = "wrongHash";
-
-  
         String expectedHash = calculateHash(username);
         assertNotEquals(expectedHash, receivedHash, "El hash recibido es incorrecto.");
-
 
         Exception exception = assertThrows(Exception.class, () -> {
             tankService.saveTank(username, receivedHash);
@@ -88,7 +85,6 @@ class TankServiceTest {
   
         String username = "Tank2";
         String receivedHash = calculateHash(username);
-
 
         when(tankRepository.count()).thenReturn(10L);
 
