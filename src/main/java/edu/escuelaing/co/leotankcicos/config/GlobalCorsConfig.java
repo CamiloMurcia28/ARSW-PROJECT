@@ -12,7 +12,7 @@ public class GlobalCorsConfig implements WebMvcConfigurer {
     public void addCorsMappings(CorsRegistry registry) {
         // Add global CORS configuration for HTTP endpoints (optional)
         registry.addMapping("/**")
-                .allowedOrigins("https://frontarsw.z22.web.core.windows.net/*", "https://leotanksload.duckdns.org/")  // Allowed origins for all HTTP endpoints
+                .allowedOrigins("https://frontarsw.z22.web.core.windows.net", "https://leotanksload.duckdns.org")  // Allowed origins for all HTTP endpoints
                 .allowedMethods("GET", "POST", "PUT", "DELETE")
                 .allowedHeaders("*");
     }
