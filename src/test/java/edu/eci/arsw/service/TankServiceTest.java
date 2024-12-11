@@ -80,7 +80,6 @@ class TankServiceTest {
             tankService.saveTank(username, receivedHash);
         });
 
-
         assertEquals("El hash del mensaje no coincide. El mensaje puede haber sido alterado.", exception.getMessage());
     }
 
@@ -97,7 +96,6 @@ class TankServiceTest {
             tankService.saveTank(username, receivedHash);
         });
 
-    
         assertEquals("The room is full", exception.getMessage());
     }
 
@@ -114,7 +112,6 @@ class TankServiceTest {
             tankService.saveTank(username, receivedHash);
         });
 
-
         assertEquals("Tank with this name already exists or is invalid", exception.getMessage());
     }
 
@@ -128,7 +125,6 @@ class TankServiceTest {
             tankService.saveTank(username, receivedHash);
         });
 
-    
         assertEquals("Tank with this name already exists or is invalid", exception.getMessage());
     }
 
@@ -138,11 +134,8 @@ class TankServiceTest {
     public void testGetTankById_TankExists() {
         String name = "Tank1";
         Tank mockTank = new Tank(1, 8, "#fa0a0a", 0, name);
-        
         when(tankRepository.findById(name)).thenReturn(Optional.of(mockTank));
-
         Tank result = tankService.getTankById(name);
-
         assertNotNull(result);
         assertEquals(name, result.getName());
     }
