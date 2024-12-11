@@ -1,13 +1,23 @@
 package edu.escuelaing.co.leotankcicos.service;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import edu.escuelaing.co.leotankcicos.model.*;
-import edu.escuelaing.co.leotankcicos.repository.*;
+
+import edu.escuelaing.co.leotankcicos.model.Board;
+import edu.escuelaing.co.leotankcicos.model.Bullet;
+import edu.escuelaing.co.leotankcicos.model.Tank;
+import edu.escuelaing.co.leotankcicos.repository.BoardRepository;
+import edu.escuelaing.co.leotankcicos.repository.BulletRepository;
+import edu.escuelaing.co.leotankcicos.repository.TankRepository;
 
 @Service
 public class TankService {
@@ -18,6 +28,8 @@ public class TankService {
     private final Object bulletLock = new Object();
     private static final int MAX_PLAYERS = 3;
 
+
+    
     private TankRepository tankRepository;
     private BulletRepository bulletRepository;
     private BoardRepository boardRepository;
