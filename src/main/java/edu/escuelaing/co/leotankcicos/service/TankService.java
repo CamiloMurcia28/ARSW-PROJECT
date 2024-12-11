@@ -2,12 +2,15 @@ package edu.escuelaing.co.leotankcicos.service;
 
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
+import javax.crypto.Mac;
+import javax.crypto.spec.SecretKeySpec;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 import edu.escuelaing.co.leotankcicos.model.*;
 import edu.escuelaing.co.leotankcicos.repository.*;
+import org.apache.commons.codec.binary.Hex;
 
 @Service
 public class TankService {
@@ -22,6 +25,8 @@ public class TankService {
     private BulletRepository bulletRepository;
     private BoardRepository boardRepository;
     private Board board;
+
+    private static final String SECRET_KEY = "shared_secret_key";
 
     @Autowired
     public TankService(BoardRepository boardRepository, SimpMessagingTemplate msgt, TankRepository tankRepository, BulletRepository bulletRepository) {
@@ -51,19 +56,36 @@ public class TankService {
         boardRepository.save(board);
     }
 
-    public synchronized Tank saveTank(String name) throws Exception {
+    public Tank saveTank(String username, String receivedHash) throws Exception {
+        // Generar el hash esperado
+        String expectedHash = calculateHash(username);
+
+        // Verificar el hash
+        if (!expectedHash.equals(receivedHash)) {
+            throw new Exception("El hash del mensaje no coincide. El mensaje puede haber sido alterado.");
+        }
+
+        // Resto de la lógica para guardar el tanque
         if (tankRepository.count() >= MAX_PLAYERS) {
             throw new Exception("The room is full");
         }
-        if (tankRepository.findById(name).isPresent() || name.equals("1") || name.equals("0")) {
+        if (tankRepository.findById(username).isPresent() || username.equals("1") || username.equals("0")) {
             throw new Exception("Tank with this name already exists or is invalid");
         }
         int[] position = defaultPositions.poll();
-        Tank newTank = new Tank(position[0], position[1], defaultColors.poll(), 0, name);
-        board.putTank(name, position[0], position[1]);
+        Tank newTank = new Tank(position[0], position[1], defaultColors.poll(), 0, username);
+        board.putTank(username, position[0], position[1]);
         saveOrUpdateBoard();
         tankRepository.save(newTank);
         return newTank;
+    }
+
+    private String calculateHash(String message) throws Exception {
+        Mac sha256Hmac = Mac.getInstance("HmacSHA256");
+        SecretKeySpec secretKey = new SecretKeySpec(SECRET_KEY.getBytes(), "HmacSHA256");
+        sha256Hmac.init(secretKey);
+        byte[] hashBytes = sha256Hmac.doFinal(message.getBytes());
+        return Hex.encodeHexString(hashBytes);
     }
 
     public List<Tank> getAllTanks() {

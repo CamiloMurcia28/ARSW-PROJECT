@@ -40,15 +40,17 @@ public class TankController {
 
     //Crea los tanques
     @PostMapping("/api/tanks/loginTank")
-    public ResponseEntity<?> createTank(@RequestParam String username, HttpSession session) {
-        session.setAttribute("username", username);
-        Tank newTank;
+    public ResponseEntity<?> createTank(@RequestBody Map<String, Object> request,  HttpSession session) {
         try {
-            newTank = tankService.saveTank(username);
-            return new ResponseEntity<>(newTank, HttpStatus.CREATED);
+            String username = (String) request.get("username");
+            session.setAttribute("username", username);
+            String receivedHash = (String) request.get("hash");
+            System.out.println(receivedHash);
+
+            Tank tank = tankService.saveTank(username, receivedHash);
+            return ResponseEntity.ok(tank);
         } catch (Exception e) {
-            System.err.println("Error saving tank: " + e.getMessage());
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.CONFLICT);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
 
     }
