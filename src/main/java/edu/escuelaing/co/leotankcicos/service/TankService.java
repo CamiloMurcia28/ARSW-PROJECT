@@ -43,8 +43,10 @@ public class TankService {
     private BoardRepository boardRepository;
     private Board board;
 
-    private static final String SECRET_KEY = System.getenv("TANK_SECRET_KEY");
 
+    // @Value("${tank.secret.key}")
+    // private String SECRET_KEY;
+    //private static final String SECRET_KEY = System.getenv("TANK_SECRET_KEY");
     @Autowired
     public TankService(BoardRepository boardRepository, SimpMessagingTemplate msgt, TankRepository tankRepository, BulletRepository bulletRepository) {
         this.boardRepository = boardRepository;
@@ -97,7 +99,8 @@ public class TankService {
         return newTank;
     }
 
-    private String calculateHash(String message) throws NoSuchAlgorithmException, InvalidKeyException {
+    public String calculateHash(String message) throws NoSuchAlgorithmException, InvalidKeyException {
+        String SECRET_KEY = System.getenv("TANK_SECRET_KEY");
         Mac sha256Hmac = Mac.getInstance("HmacSHA256");
         SecretKeySpec secretKey = new SecretKeySpec(SECRET_KEY.getBytes(), "HmacSHA256");
         sha256Hmac.init(secretKey);

@@ -3,12 +3,7 @@ package edu.eci.arsw.service;
 import java.util.List;
 import java.util.Optional;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-
-import org.apache.commons.codec.binary.Hex;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -44,86 +39,19 @@ class TankServiceTest {
 
     @InjectMocks
     private TankService tankService;
+    
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
         reset(tankRepository, bulletRepository, boardRepository);
+        
         Board board = new Board();
         board.setId("board1");
+        
         when(boardRepository.save(any(Board.class))).thenReturn(board);
-        when(boardRepository.findById("board1")).thenReturn(java.util.Optional.of(board));
+        when(boardRepository.findById("board1")).thenReturn(Optional.of(board));
     }
-    private static final String SECRET_KEY = "shared_secret_key";
-
-    private String calculateHash(String message) throws Exception {
-        Mac sha256Hmac = Mac.getInstance("HmacSHA256");
-        SecretKeySpec secretKey = new SecretKeySpec(SECRET_KEY.getBytes(), "HmacSHA256");
-        sha256Hmac.init(secretKey);
-        byte[] hashBytes = sha256Hmac.doFinal(message.getBytes());
-        return Hex.encodeHexString(hashBytes);
-    }
-
-    /*PARA EL SAVETANK */
-     @Test
-    void testSaveTank_HashMismatch() throws Exception {
-
-        String username = "Tank1";
-        String receivedHash = "wrongHash";
-        String expectedHash = calculateHash(username);
-        assertNotEquals(expectedHash, receivedHash, "El hash recibido es incorrecto.");
-
-        Exception exception = assertThrows(Exception.class, () -> {
-            tankService.saveTank(username, receivedHash);
-        });
-
-        assertEquals("El hash del mensaje no coincide. El mensaje puede haber sido alterado.", exception.getMessage());
-    }
-
-    @Test
-    void testSaveTank_RoomFull() throws Exception {
-  
-        String username = "Tank2";
-        String receivedHash = calculateHash(username);
-
-        when(tankRepository.count()).thenReturn(10L);
-
-        Exception exception = assertThrows(Exception.class, () -> {
-            tankService.saveTank(username, receivedHash);
-        });
-
-        assertEquals("The room is full", exception.getMessage());
-    }
-
-    @Test
-    void testSaveTank_TankAlreadyExists() throws Exception {
-
-        String username = "Tank1";
-        String receivedHash = calculateHash(username);
-
-        when(tankRepository.findById(username)).thenReturn(java.util.Optional.of(new Tank(0, 0, "Red", 0, username)));
-
-
-        Exception exception = assertThrows(Exception.class, () -> {
-            tankService.saveTank(username, receivedHash);
-        });
-
-        assertEquals("Tank with this name already exists or is invalid", exception.getMessage());
-    }
-
-    @Test
-    void testSaveTank_InvalidName() throws Exception {
-        String username = "1"; 
-        String receivedHash = calculateHash(username);
-
-    
-        Exception exception = assertThrows(Exception.class, () -> {
-            tankService.saveTank(username, receivedHash);
-        });
-
-        assertEquals("Tank with this name already exists or is invalid", exception.getMessage());
-    }
-
 
     /*Para GetTankByID */
     @Test

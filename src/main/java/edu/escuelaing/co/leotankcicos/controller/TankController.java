@@ -36,13 +36,13 @@ public class TankController {
     }
 
     @GetMapping("/")
-    public ResponseEntity<?> ok(){
+    public ResponseEntity<Void> ok(){
         return new ResponseEntity(HttpStatus.OK);
     }
 
     //Crea los tanques
     @PostMapping("/api/tanks/loginTank")
-    public ResponseEntity<?> createTank(@RequestBody Map<String, Object> request,  HttpSession session) {
+    public ResponseEntity<Tank> createTank(@RequestBody Map<String, Object> request,  HttpSession session) {
         try {
             String username = (String) request.get(USERNAME_STRING);
             session.setAttribute(USERNAME_STRING, username);
@@ -51,7 +51,7 @@ public class TankController {
             Tank tank = tankService.saveTank(username, receivedHash);
             return ResponseEntity.ok(tank);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
+            return ResponseEntity.badRequest().body(null);
         }
 
     }
