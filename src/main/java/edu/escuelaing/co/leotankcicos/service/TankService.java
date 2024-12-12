@@ -29,7 +29,6 @@ import edu.escuelaing.co.leotankcicos.model.Tank;
 import edu.escuelaing.co.leotankcicos.repository.BoardRepository;
 import edu.escuelaing.co.leotankcicos.repository.BulletRepository;
 import edu.escuelaing.co.leotankcicos.repository.TankRepository;
-
 @Service
 public class TankService {
 
@@ -74,7 +73,7 @@ public class TankService {
         boardRepository.save(board);
     }
 
-    public Tank saveTank(String username, String receivedHash) throws InvalidHashException, RoomFullException, TankExistsException, Exception {
+    public Tank saveTank(String username, String receivedHash) throws InvalidHashException, RoomFullException, TankExistsException, NoSuchAlgorithmException, InvalidKeyException {
         // Generar el hash esperado
         String expectedHash = calculateHash(username);
 
@@ -158,17 +157,7 @@ public class TankService {
             }
         }
         msgt.convertAndSend("/topic/matches/1/movement", tank);
-        printBoard(getBoardBoxes());
         return tank;
-    }
-
-    public void printBoard(String[][] boxes) {
-        for (String[] row : boxes) {
-            for (String cell : row) {
-                System.out.print(cell + " ");
-            }
-            System.out.println();
-        }
     }
 
     public Bullet shoot(String username, String bulletId) {
@@ -207,49 +196,70 @@ public class TankService {
         boolean shouldContinue = true;
     
         while (bullet.isAlive() && shouldContinue) {
-            int newX = bullet.getX();
-            int newY = bullet.getY();
-    
-            switch (bullet.getDirection()) {
-                case -90 -> newY = bullet.getY() - 1;  
-                case 0 -> newX = bullet.getX() + 1;   
-                case 90 -> newY = bullet.getY() + 1;  
-                case 180 -> newX = bullet.getX() - 1;
-                default -> {
-                }
-            }
+            int[] newCoordinates = calculateNewCoordinates(bullet);
+            int newX = newCoordinates[0];
+            int newY = newCoordinates[1];
     
             if (isOutOfBounds(newX, newY)) {
-                bullet.setAlive(false);
-                bulletRepository.deleteById(bullet.getId());
+                handleOutOfBounds(bullet);
                 shouldContinue = false;
             } else {
                 bullet.setX(newX);
                 bullet.setY(newY);
     
-                String[][] boxes = board.getBoxes();
-                String boxContent = boxes[newY][newX];
-    
-                if (!boxContent.equals("0") && !boxContent.equals("1")) {
-                    Optional<Tank> collidedTank = tankRepository.findById(boxContent);
-    
-                    if (collidedTank.isPresent() && !collidedTank.get().getName().equals(bullet.getTankId())) {
-                        handleCollision(bullet, collidedTank.get());
-                        bullet.setAlive(false);
-                        bulletRepository.deleteById(bullet.getId());
-                        shouldContinue = false;
-                    }
+                if (handleCollisionIfNeeded(bullet, newX, newY)) {
+                    shouldContinue = false;
                 }
             }
     
             if (shouldContinue) {
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                    shouldContinue = false;
-                }
+                sleep();
             }
+        }
+    }
+    
+    private int[] calculateNewCoordinates(Bullet bullet) {
+        int newX = bullet.getX();
+        int newY = bullet.getY();
+    
+        switch (bullet.getDirection()) {
+            case -90 -> newY = bullet.getY() - 1;
+            case 0 -> newX = bullet.getX() + 1;
+            case 90 -> newY = bullet.getY() + 1;
+            case 180 -> newX = bullet.getX() - 1;
+            default -> {
+                // Caso default vacío
+            }
+        }
+        return new int[]{newX, newY};
+    }
+    
+    private void handleOutOfBounds(Bullet bullet) {
+        bullet.setAlive(false);
+        bulletRepository.deleteById(bullet.getId());
+    }
+    
+    private boolean handleCollisionIfNeeded(Bullet bullet, int newX, int newY) {
+        String[][] boxes = board.getBoxes();
+        String boxContent = boxes[newY][newX];
+    
+        if (!boxContent.equals("0") && !boxContent.equals("1")) {
+            Optional<Tank> collidedTank = tankRepository.findById(boxContent);
+    
+            if (collidedTank.isPresent() && !collidedTank.get().getName().equals(bullet.getTankId())) {
+                handleCollision(bullet, collidedTank.get());
+                bullet.setAlive(false);
+                bulletRepository.deleteById(bullet.getId());
+                return true;
+            }
+        }
+        return false;
+    }
+    
+    private void sleep() {
+        try {
+            Thread.sleep(500);
+        } catch (InterruptedException e) {
         }
     }
 

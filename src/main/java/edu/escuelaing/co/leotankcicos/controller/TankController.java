@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import edu.escuelaing.co.exception.BoxOccupiedException;
+import edu.escuelaing.co.exception.TankPositionException;
 import edu.escuelaing.co.leotankcicos.model.Bullet;
 import edu.escuelaing.co.leotankcicos.model.Tank;
 import edu.escuelaing.co.leotankcicos.service.TankService;
@@ -74,17 +76,13 @@ public class TankController {
 
     // Mover tanque 
     @MessageMapping("/{username}/move")
-    public void moveTank(@DestinationVariable String username, @RequestBody Map<String, Integer> moveRequest){
+    public void moveTank(@DestinationVariable String username, @RequestBody Map<String, Integer> moveRequest) throws TankPositionException, BoxOccupiedException{
         Integer posX = moveRequest.get("posX");
         Integer posY = moveRequest.get("posY");
         Integer newPosX = moveRequest.get("newPosX");
         Integer newPosY = moveRequest.get("newPosY");
         Integer rotation = moveRequest.get("rotation");
-        try {
             updatedTank = tankService.updateTankPosition(username, posX, posY, newPosX, newPosY, rotation);
-        }catch (Exception e) {
-            System.err.println("Error al mover el tanque: " + e.getMessage());
-        }
     }
 
     // Obtener un tanque específico
