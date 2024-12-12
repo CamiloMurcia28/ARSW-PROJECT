@@ -43,7 +43,7 @@ public class TankService {
     private BoardRepository boardRepository;
     private Board board;
 
-    private static final String SECRET_KEY = "shared_secret_key";
+    private static final String SECRET_KEY = System.getenv("TANK_SECRET_KEY");
 
     @Autowired
     public TankService(BoardRepository boardRepository, SimpMessagingTemplate msgt, TankRepository tankRepository, BulletRepository bulletRepository) {
@@ -260,6 +260,7 @@ public class TankService {
         try {
             Thread.sleep(500);
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
         }
     }
 
