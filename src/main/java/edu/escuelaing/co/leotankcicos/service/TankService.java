@@ -118,7 +118,7 @@ public class TankService {
             return null;
         }
         String[][] boxes = board.getBoxes();
-        
+
         if (newX < 0 || newX >= boxes[0].length || newY < 0 || newY >= boxes.length) {
             throw new IllegalArgumentException("Invalid coordinates");
         }
@@ -141,7 +141,6 @@ public class TankService {
 
         synchronized (board.getLock(firstX, firstY)) {
             synchronized (board.getLock(secondX, secondY)) {
-                boxes = board.getBoxes();
 
                 board.clearBox(x, y);
                 board.putTank(tank.getName(), newX, newY);
