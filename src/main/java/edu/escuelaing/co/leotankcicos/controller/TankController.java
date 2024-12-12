@@ -15,8 +15,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import edu.escuelaing.co.exception.BoxOccupiedException;
-import edu.escuelaing.co.exception.TankPositionException;
 import edu.escuelaing.co.leotankcicos.model.Bullet;
 import edu.escuelaing.co.leotankcicos.model.Tank;
 import edu.escuelaing.co.leotankcicos.service.TankService;
@@ -76,7 +74,7 @@ public class TankController {
 
     // Mover tanque 
     @MessageMapping("/{username}/move")
-    public void moveTank(@DestinationVariable String username, @RequestBody Map<String, Integer> moveRequest) throws TankPositionException, BoxOccupiedException{
+    public void moveTank(@DestinationVariable String username, @RequestBody Map<String, Integer> moveRequest) {
         Integer posX = moveRequest.get("posX");
         Integer posY = moveRequest.get("posY");
         Integer newPosX = moveRequest.get("newPosX");
