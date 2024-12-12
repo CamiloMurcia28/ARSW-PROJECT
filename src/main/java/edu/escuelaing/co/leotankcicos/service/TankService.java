@@ -168,7 +168,6 @@ public class TankService {
                     tank.getPosx(),
                     tank.getPosy(),
                     tank.getRotation(),
-                    true,
                     username
             );
             bulletRepository.save(bullet);

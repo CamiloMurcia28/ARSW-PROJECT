@@ -14,7 +14,7 @@ public class Bullet {
     private boolean alive;
     private String tankId;
 
-    public Bullet(String id, int x, int y, int direction, boolean alive, String tankId) {
+    public Bullet(String id, int x, int y, int direction, String tankId) {
         this.id = id;
         this.x = x;
         this.y = y;

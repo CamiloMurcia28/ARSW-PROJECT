@@ -46,16 +46,7 @@ class TankServiceTest {
     void setUp() {
         MockitoAnnotations.openMocks(this);
         reset(tankRepository, bulletRepository, boardRepository);
-        
-        Board board = new Board();
-        board.setId("board1");
-        
-        when(boardRepository.save(any(Board.class))).thenReturn(board);
-        when(boardRepository.findById("board1")).thenReturn(Optional.of(board));
     }
-
-    /*Para saveTank*/
-
 
     /*Para GetTankByID */
     @Test
@@ -88,7 +79,7 @@ class TankServiceTest {
         Tank mockTank = new Tank(1, 8, "#fa0a0a", 0, username);
         when(tankRepository.findById(username)).thenReturn(Optional.of(mockTank));
 
-        Bullet mockBullet = new Bullet(bulletId, 1, 8, 0, true, username);
+        Bullet mockBullet = new Bullet(bulletId, 1, 8, 0, username);
         when(bulletRepository.save(any(Bullet.class))).thenReturn(mockBullet);
 
         Bullet result = tankService.shoot(username, bulletId);
