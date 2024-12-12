@@ -211,8 +211,28 @@ class TankServiceTest {
         assertDoesNotThrow((Executable) () -> tankService.handleWinner());
     }
 
+    @Test
+    void testShoot_MultipleBulletsAllowed() {
+        String username = "Tank1";
+        String bulletId1 = "bullet1";
+        String bulletId2 = "bullet2";
 
+        Tank mockTank = new Tank(1, 1, "#fa0a0a", 0, username);
+        when(tankRepository.findById(username)).thenReturn(Optional.of(mockTank));
 
+        Bullet mockBullet1 = new Bullet(bulletId1, 1, 1, 0, username);
+        Bullet mockBullet2 = new Bullet(bulletId2, 1, 1, 0, username);
+
+        when(bulletRepository.save(any(Bullet.class))).thenReturn(mockBullet1).thenReturn(mockBullet2);
+
+        Bullet result1 = tankService.shoot(username, bulletId1);
+        Bullet result2 = tankService.shoot(username, bulletId2);
+
+        assertNotNull(result1);
+        assertNotNull(result2);
+        assertEquals(bulletId1, result1.getId());
+        assertEquals(bulletId2, result2.getId());
+    }
 
 }
 
