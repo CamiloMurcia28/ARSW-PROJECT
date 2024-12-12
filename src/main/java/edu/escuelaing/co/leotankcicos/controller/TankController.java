@@ -13,8 +13,6 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import edu.escuelaing.co.leotankcicos.model.Bullet;
@@ -27,6 +25,8 @@ import jakarta.servlet.http.HttpSession;
 public class TankController {
 
     private final TankService tankService;
+    Tank updatedTank;
+    private static final String USERNAME_STRING = "username";
 
     @Autowired
     public TankController(TankService tankService) {
@@ -42,10 +42,9 @@ public class TankController {
     @PostMapping("/api/tanks/loginTank")
     public ResponseEntity<?> createTank(@RequestBody Map<String, Object> request,  HttpSession session) {
         try {
-            String username = (String) request.get("username");
-            session.setAttribute("username", username);
+            String username = (String) request.get(USERNAME_STRING);
+            session.setAttribute(USERNAME_STRING, username);
             String receivedHash = (String) request.get("hash");
-            System.out.println(receivedHash);
 
             Tank tank = tankService.saveTank(username, receivedHash);
             return ResponseEntity.ok(tank);
@@ -65,7 +64,7 @@ public class TankController {
     // Ruta para obtener el nombre de usuario
     @GetMapping("/api/tanks/username")
     public ResponseEntity<String> getUsername(HttpSession session) {
-        String username = (String) session.getAttribute("username");
+        String username = (String) session.getAttribute(USERNAME_STRING);
         if (username != null) {
             return new ResponseEntity<>(username, HttpStatus.OK);
         } else {
@@ -82,8 +81,7 @@ public class TankController {
         Integer newPosY = moveRequest.get("newPosY");
         Integer rotation = moveRequest.get("rotation");
         try {
-            System.out.println("Moving tank " + username + " to (" + newPosX + ", " + newPosY + ")");
-            Tank updatedTank = tankService.updateTankPosition(username, posX, posY, newPosX, newPosY, rotation);
+            updatedTank = tankService.updateTankPosition(username, posX, posY, newPosX, newPosY, rotation);
         }catch (Exception e) {
             System.err.println("Error al mover el tanque: " + e.getMessage());
         }
@@ -119,7 +117,6 @@ public class TankController {
 
     @MessageMapping("/{username}/shoot")
     public void handleShootEvent(@DestinationVariable String username, @RequestBody String bulletId) {
-        System.out.println(bulletId);
         tankService.shoot(username, bulletId);
     }
 

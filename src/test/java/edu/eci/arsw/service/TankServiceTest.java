@@ -127,7 +127,7 @@ class TankServiceTest {
 
     /*Para GetTankByID */
     @Test
-    public void testGetTankById_TankExists() {
+    void testGetTankById_TankExists() {
         String name = "Tank1";
         Tank mockTank = new Tank(1, 8, "#fa0a0a", 0, name);
         when(tankRepository.findById(name)).thenReturn(Optional.of(mockTank));
@@ -137,7 +137,7 @@ class TankServiceTest {
     }
 
     @Test
-    public void testGetTankById_TankNotFound() {
+    void testGetTankById_TankNotFound() {
         String name = "NonExistingTank";
 
         when(tankRepository.findById(name)).thenReturn(Optional.empty());
@@ -149,7 +149,7 @@ class TankServiceTest {
 
     /*PARA EL Shoot */
     @Test
-    public void testShoot_Success() {
+    void testShoot_Success() {
         String username = "Tank1";
         String bulletId = "bullet123";
         
@@ -166,7 +166,7 @@ class TankServiceTest {
     }
 
     @Test
-    public void testShoot_TankNotFound() {
+    void testShoot_TankNotFound() {
         String username = "Tank1";
         String bulletId = "bullet123";
 
@@ -178,7 +178,7 @@ class TankServiceTest {
     }
     /*Para UpdatePosition */
     @Test
-    public void testUpdateTankPosition_TankNotInOriginalPosition() throws Exception {
+    void testUpdateTankPosition_TankNotInOriginalPosition(){
         String username = "Tank1";
         int x = 1, y = 4, newX = 2, newY = 4, rotation = 90;
         Tank mockTank = new Tank(x, y, "#fa0a0a", 0, username);

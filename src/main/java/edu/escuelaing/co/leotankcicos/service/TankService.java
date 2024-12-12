@@ -1,16 +1,34 @@
 package edu.escuelaing.co.leotankcicos.service;
 
-import java.util.*;
+import java.security.InvalidKeyException;
+import java.security.NoSuchAlgorithmException;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
 import java.util.concurrent.CompletableFuture;
+
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 
+import org.apache.commons.codec.binary.Hex;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
-import edu.escuelaing.co.leotankcicos.model.*;
-import edu.escuelaing.co.leotankcicos.repository.*;
-import org.apache.commons.codec.binary.Hex;
+
+import edu.escuelaing.co.exception.BoxOccupiedException;
+import edu.escuelaing.co.exception.InvalidHashException;
+import edu.escuelaing.co.exception.RoomFullException;
+import edu.escuelaing.co.exception.TankExistsException;
+import edu.escuelaing.co.exception.TankPositionException;
+import edu.escuelaing.co.leotankcicos.model.Board;
+import edu.escuelaing.co.leotankcicos.model.Bullet;
+import edu.escuelaing.co.leotankcicos.model.Tank;
+import edu.escuelaing.co.leotankcicos.repository.BoardRepository;
+import edu.escuelaing.co.leotankcicos.repository.BulletRepository;
+import edu.escuelaing.co.leotankcicos.repository.TankRepository;
 
 @Service
 public class TankService {
@@ -56,21 +74,21 @@ public class TankService {
         boardRepository.save(board);
     }
 
-    public Tank saveTank(String username, String receivedHash) throws Exception {
+    public Tank saveTank(String username, String receivedHash) throws InvalidHashException, RoomFullException, TankExistsException, Exception {
         // Generar el hash esperado
         String expectedHash = calculateHash(username);
 
         // Verificar el hash
         if (!expectedHash.equals(receivedHash)) {
-            throw new Exception("El hash del mensaje no coincide. El mensaje puede haber sido alterado.");
+            throw new InvalidHashException("El hash del mensaje no coincide. El mensaje puede haber sido alterado.");
         }
 
         // Resto de la lógica para guardar el tanque
         if (tankRepository.count() >= MAX_PLAYERS) {
-            throw new Exception("The room is full");
+            throw new RoomFullException("The room is full");
         }
         if (tankRepository.findById(username).isPresent() || username.equals("1") || username.equals("0")) {
-            throw new Exception("Tank with this name already exists or is invalid");
+            throw new TankExistsException("Tank with this name already exists or is invalid");
         }
         int[] position = defaultPositions.poll();
         Tank newTank = new Tank(position[0], position[1], defaultColors.poll(), 0, username);
@@ -80,7 +98,7 @@ public class TankService {
         return newTank;
     }
 
-    private String calculateHash(String message) throws Exception {
+    private String calculateHash(String message) throws NoSuchAlgorithmException, InvalidKeyException {
         Mac sha256Hmac = Mac.getInstance("HmacSHA256");
         SecretKeySpec secretKey = new SecretKeySpec(SECRET_KEY.getBytes(), "HmacSHA256");
         sha256Hmac.init(secretKey);
@@ -96,13 +114,16 @@ public class TankService {
         return tankRepository.findById(username).orElse(null);
     }
 
-    public Tank updateTankPosition(String username, int x, int y, int newX, int newY, int rotation) throws Exception {
+    public Tank updateTankPosition(String username, int x, int y, int newX, int newY, int rotation) throws TankPositionException, BoxOccupiedException{
         Tank tank = tankRepository.findById(username).orElse(null);
         if (tank == null) {
             return null;
         }
         String[][] boxes = board.getBoxes();
-        int firstX, firstY, secondX, secondY;
+        int firstX;
+        int firstY; 
+        int secondX; 
+        int secondY;
         if (y * boxes[0].length + x <= newY * boxes[0].length + newX) {
             firstX = x;
             firstY = y;
@@ -119,13 +140,12 @@ public class TankService {
             synchronized (board.getLock(secondX, secondY)) {
                 boxes = board.getBoxes();
                 if (!boxes[y][x].equals(username)) {
-                    throw new Exception("Tank is no longer in the original position");
+                    throw new TankPositionException("Tank is no longer in the original position");
                 }
 
                 String box = boxes[newY][newX];
                 if (!box.equals("0")) {
-                    System.out.println("This box is already occupied by: " + box);
-                    throw new Exception("This box is already occupied by: " + box);
+                    throw new BoxOccupiedException("This box is already occupied by: " + box);
                 }
 
                 board.clearBox(x, y);
@@ -168,7 +188,7 @@ public class TankService {
                     username
             );
             bulletRepository.save(bullet);
-            //activeBullets.put(bullet.getId(), savedBullet);
+            
         }
         startBulletMovement(bullet);
         return bullet;
@@ -176,7 +196,7 @@ public class TankService {
 
     public Bullet getBulletPosition(String bulletId) {
         return bulletRepository.findById(bulletId).orElse(null);
-        //return activeBullets.get(bulletId);
+        
     }
 
     private void startBulletMovement(Bullet bullet) {
@@ -184,45 +204,51 @@ public class TankService {
     }
 
     private void moveBullet(Bullet bullet) {
-        while (bullet.isAlive()) {
+        boolean shouldContinue = true;
+    
+        while (bullet.isAlive() && shouldContinue) {
             int newX = bullet.getX();
             int newY = bullet.getY();
-
+    
             switch (bullet.getDirection()) {
                 case -90 -> newY = bullet.getY() - 1;  
                 case 0 -> newX = bullet.getX() + 1;   
                 case 90 -> newY = bullet.getY() + 1;  
-                case 180 -> newX = bullet.getX() - 1;  
+                case 180 -> newX = bullet.getX() - 1;
+                default -> {
+                }
             }
     
             if (isOutOfBounds(newX, newY)) {
                 bullet.setAlive(false);
                 bulletRepository.deleteById(bullet.getId());
-                break;
-            }
-
-            bullet.setX(newX);
-            bullet.setY(newY);
+                shouldContinue = false;
+            } else {
+                bullet.setX(newX);
+                bullet.setY(newY);
     
-            String[][] boxes = board.getBoxes();
-            String boxContent = boxes[newY][newX];
+                String[][] boxes = board.getBoxes();
+                String boxContent = boxes[newY][newX];
     
-            if (!boxContent.equals("0") && !boxContent.equals("1")) {
-                Optional<Tank> collidedTank = tankRepository.findById(boxContent);
-                
-                if (collidedTank.isPresent() && !collidedTank.get().getName().equals(bullet.getTankId())) {
-                    handleCollision(bullet, collidedTank.get());
-                    bullet.setAlive(false);
-                    bulletRepository.deleteById(bullet.getId());
-                    break;
+                if (!boxContent.equals("0") && !boxContent.equals("1")) {
+                    Optional<Tank> collidedTank = tankRepository.findById(boxContent);
+    
+                    if (collidedTank.isPresent() && !collidedTank.get().getName().equals(bullet.getTankId())) {
+                        handleCollision(bullet, collidedTank.get());
+                        bullet.setAlive(false);
+                        bulletRepository.deleteById(bullet.getId());
+                        shouldContinue = false;
+                    }
                 }
             }
-
-            try {
-                Thread.sleep(500);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-                break;
+    
+            if (shouldContinue) {
+                try {
+                    Thread.sleep(500);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                    shouldContinue = false;
+                }
             }
         }
     }
@@ -230,11 +256,6 @@ public class TankService {
     private boolean isOutOfBounds(int x, int y) {
         String[][] boxes = board.getBoxes();
         return x < 0 || x >= boxes[0].length || y < 0 || y >= boxes.length || boxes[y][x].equals("1");
-    }
-
-    private boolean checkCollision(Bullet bullet, Tank tank) {
-        return Math.abs(tank.getPosx() - bullet.getX()) < 1 
-            && Math.abs(tank.getPosy() - bullet.getY()) < 1;
     }
 
     private void handleCollision(Bullet bullet, Tank tank) {
@@ -249,7 +270,6 @@ public class TankService {
             response.put("bulletId", bullet.getId());
             
             msgt.convertAndSend("/topic/matches/1/collisionResult", response);
-            System.out.println("¡Colisión! Tanque " + tank.getName() + " ha sido golpeado");
         });
         
 
@@ -279,7 +299,6 @@ public class TankService {
     }
 
     private void announceVictory(Tank winner) {
-        System.out.println("¡El ganador es: " + winner.getName() + "!");
         tankRepository.deleteAll();
         board.clearBoard();
         saveOrUpdateBoard();
