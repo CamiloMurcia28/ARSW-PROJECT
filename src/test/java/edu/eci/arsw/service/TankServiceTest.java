@@ -3,6 +3,7 @@ package edu.eci.arsw.service;
 import java.util.List;
 import java.util.Optional;
 
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
@@ -14,6 +15,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.mockito.MockitoAnnotations;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -52,6 +54,9 @@ class TankServiceTest {
         when(boardRepository.save(any(Board.class))).thenReturn(board);
         when(boardRepository.findById("board1")).thenReturn(Optional.of(board));
     }
+
+    /*Para saveTank*/
+
 
     /*Para GetTankByID */
     @Test
@@ -136,4 +141,41 @@ class TankServiceTest {
         assertEquals("Tank is no longer in the original position", exception.getMessage());
     }
 
+    /* Para el Reset  */
+    @Test
+    void testReset() {
+
+        tankService.reset();
+        verify(tankRepository).deleteAll();
+        verify(bulletRepository).deleteAll();
+        verify(boardRepository).save(any(Board.class));
+        assertDoesNotThrow(() -> {
+            tankService.reset();
+        });
+    }
+
+    @Test
+    void testBoardReset() {
+        tankService.reset();
+        verify(boardRepository).save(any(Board.class));
+    }
+    
+    @Test
+    void testTankRepositoryReset() {
+        tankService.reset();
+        verify(tankRepository).deleteAll();
+    }
+
+    @Test
+    void testBulletRepositoryReset() {
+        tankService.reset();
+        verify(bulletRepository).deleteAll();
+    }
+
+    /*Para HandleWinner */
+
+
+
+
 }
+
