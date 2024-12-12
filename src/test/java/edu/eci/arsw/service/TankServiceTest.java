@@ -80,7 +80,7 @@ class TankServiceTest {
         Tank mockTank = new Tank(1, 8, "#fa0a0a", 0, username);
         when(tankRepository.findById(username)).thenReturn(Optional.of(mockTank));
 
-        Bullet mockBullet = new Bullet(bulletId, 1, 8, 0, username);
+        Bullet mockBullet = new Bullet(bulletId, 1, 8, 0, false, username);
         when(bulletRepository.save(any(Bullet.class))).thenReturn(mockBullet);
 
         Bullet result = tankService.shoot(username, bulletId);
@@ -220,8 +220,8 @@ class TankServiceTest {
         Tank mockTank = new Tank(1, 1, "#fa0a0a", 0, username);
         when(tankRepository.findById(username)).thenReturn(Optional.of(mockTank));
 
-        Bullet mockBullet1 = new Bullet(bulletId1, 1, 1, 0, username);
-        Bullet mockBullet2 = new Bullet(bulletId2, 1, 1, 0, username);
+        Bullet mockBullet1 = new Bullet(bulletId1, 1, 1, 0, false, username);
+        Bullet mockBullet2 = new Bullet(bulletId2, 1, 1, 0, false, username);
 
         when(bulletRepository.save(any(Bullet.class))).thenReturn(mockBullet1).thenReturn(mockBullet2);
 

@@ -137,7 +137,7 @@ class TankControllerTest {
     @Test
     void testGetBulletPositionFound() {
         String bulletId = "Bullet1";
-        Bullet mockBullet = new Bullet (bulletId, 5, 5,90,"tankid");
+        Bullet mockBullet = new Bullet (bulletId, 5, 5,90,false, "tankid");
         when(tankService.getBulletPosition(bulletId)).thenReturn(mockBullet);
 
         ResponseEntity<Bullet> response = tankController.getBulletPosition(bulletId);
