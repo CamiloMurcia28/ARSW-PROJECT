@@ -9,6 +9,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.function.Executable;
 import static org.mockito.ArgumentMatchers.any;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
@@ -192,6 +193,23 @@ class TankServiceTest {
     }
 
     /*Para HandleWinner */
+    @Test
+    void testHandleWinner_Success() {
+        String winner = "Tank1";
+        Tank mockTank = new Tank(1, 1, "#fa0a0a", 0, winner);
+
+        when(tankRepository.findById(winner)).thenReturn(Optional.of(mockTank));
+
+    }
+
+    @Test
+    void testHandleWinner_TankNotFound() {
+        String winner = "NonExistingTank";
+
+        when(tankRepository.findById(winner)).thenReturn(Optional.empty());
+
+        assertDoesNotThrow((Executable) () -> tankService.handleWinner());
+    }
 
 
 
