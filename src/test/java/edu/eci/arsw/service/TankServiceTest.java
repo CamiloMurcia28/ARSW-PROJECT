@@ -155,10 +155,17 @@ class TankServiceTest {
         when(tankRepository.findById(username)).thenReturn(Optional.of(mockTank));
         when(boardRepository.findById(any(String.class))).thenReturn(Optional.of(mockBoard));
     
+        // Llamamos al método y verificamos que el tanque no se mueve (devuelve el tanque original)
+        tankService.updateTankPosition(username, x, y, newX, newY, rotation);
+    
         // Verificamos que el tanque no cambió de posición
         assertNotEquals(x, mockTank.getPosx());
         assertNotEquals(y, mockTank.getPosy());
+    
+        // Verificamos las interacciones
+        verify(tankRepository).findById(username);
     }
+    
 
     
 
