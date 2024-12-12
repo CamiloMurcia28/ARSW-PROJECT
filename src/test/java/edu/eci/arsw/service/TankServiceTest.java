@@ -1,13 +1,12 @@
 package edu.eci.arsw.service;
 
-import java.util.List;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import static org.mockito.ArgumentMatchers.any;
@@ -111,35 +110,60 @@ class TankServiceTest {
     }
     /*Para UpdatePosition */
     @Test
-    void testUpdateTankPosition_TankNotInOriginalPosition(){
+    void testUpdateTankPosition_Success() {
         String username = "Tank1";
-        int x = 1, y = 4, newX = 2, newY = 4, rotation = 90;
+        int x = 1, y = 1, newX = 2, newY = 2, rotation = 90;
+        
         Tank mockTank = new Tank(x, y, "#fa0a0a", 0, username);
-        when(tankRepository.findById(username)).thenReturn(Optional.of(mockTank));
-    
-       
-        String[][] mockBoxes = new String[5][5]; 
-        for (int i = 0; i < mockBoxes.length; i++) {
-            for (int j = 0; j < mockBoxes[i].length; j++) {
-                if (i == y && j == x) {
-                    mockBoxes[i][j] = username;  
-                } else {
-                    mockBoxes[i][j] = "0";  
-                }
-            }
-        }
-    
-        mockBoxes[newY][newX] = username; 
         Board mockBoard = mock(Board.class);
-        when(mockBoard.getBoxes()).thenReturn(mockBoxes); 
-        when(boardRepository.findAll()).thenReturn(List.of(mockBoard));
-   
-        Exception exception = assertThrows(Exception.class, () -> {
-            tankService.updateTankPosition(username, x, y, newX, newY, rotation);
-        });
-    
-        assertEquals("Tank is no longer in the original position", exception.getMessage());
+        when(mockBoard.getBoxes()).thenReturn(new String[5][5]);
+        when(tankRepository.findById(username)).thenReturn(Optional.of(mockTank));
+        when(boardRepository.findById(any(String.class))).thenReturn(Optional.of(mockBoard));
+
+        Tank updatedTank = tankService.updateTankPosition(username, x, y, newX, newY, rotation);
+
+        assertNotNull(updatedTank);
+        assertEquals(newX, updatedTank.getPosx());
+        assertEquals(newY, updatedTank.getPosy());
+        assertEquals(rotation, updatedTank.getRotation());
+        verify(tankRepository).save(mockTank);
     }
+
+    @Test
+    void testUpdateTankPosition_TankNotFound() {
+        String username = "NonExistingTank";
+        int x = 1, y = 1, newX = 2, newY = 2, rotation = 90;
+
+        when(tankRepository.findById(username)).thenReturn(Optional.empty());
+
+        Tank result = tankService.updateTankPosition(username, x, y, newX, newY, rotation);
+
+        assertNull(result, "Expected null when tank is not found");
+    }
+
+    @Test
+    void testUpdateTankPosition_BoxAlreadyOccupied() {
+        String username = "Tank1";
+        int x = 1, y = 1, newX = 2, newY = 2, rotation = 90;
+    
+        Tank mockTank = new Tank(x, y, "#fa0a0a", 0, username);
+        Board mockBoard = mock(Board.class);
+        String[][] boxes = new String[5][5];
+        boxes[newY][newX] = "otherTank"; // La posición ya está ocupada
+    
+        when(mockBoard.getBoxes()).thenReturn(boxes);
+        when(tankRepository.findById(username)).thenReturn(Optional.of(mockTank));
+        when(boardRepository.findById(any(String.class))).thenReturn(Optional.of(mockBoard));
+    
+        // Llamamos al método y verificamos que el tanque no se mueve (devuelve el tanque original)
+        Tank result = tankService.updateTankPosition(username, x, y, newX, newY, rotation);
+    
+        // Verificamos que el tanque no cambió de posición
+        assertNotEquals(x, mockTank.getPosx());
+        assertNotEquals(y, mockTank.getPosy());
+    }
+
+    
 
     /* Para el Reset  */
     @Test

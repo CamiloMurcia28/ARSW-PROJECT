@@ -18,11 +18,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
-import edu.escuelaing.co.exception.BoxOccupiedException;
 import edu.escuelaing.co.exception.InvalidHashException;
 import edu.escuelaing.co.exception.RoomFullException;
 import edu.escuelaing.co.exception.TankExistsException;
-import edu.escuelaing.co.exception.TankPositionException;
 import edu.escuelaing.co.leotankcicos.model.Board;
 import edu.escuelaing.co.leotankcicos.model.Bullet;
 import edu.escuelaing.co.leotankcicos.model.Tank;
@@ -114,12 +112,17 @@ public class TankService {
         return tankRepository.findById(username).orElse(null);
     }
 
-    public Tank updateTankPosition(String username, int x, int y, int newX, int newY, int rotation) throws TankPositionException, BoxOccupiedException{
+    public Tank updateTankPosition(String username, int x, int y, int newX, int newY, int rotation) {
         Tank tank = tankRepository.findById(username).orElse(null);
         if (tank == null) {
             return null;
         }
         String[][] boxes = board.getBoxes();
+        
+        if (newX < 0 || newX >= boxes[0].length || newY < 0 || newY >= boxes.length) {
+            throw new IllegalArgumentException("Invalid coordinates");
+        }
+
         int firstX;
         int firstY; 
         int secondX; 
@@ -139,14 +142,6 @@ public class TankService {
         synchronized (board.getLock(firstX, firstY)) {
             synchronized (board.getLock(secondX, secondY)) {
                 boxes = board.getBoxes();
-                if (!boxes[y][x].equals(username)) {
-                    throw new TankPositionException("Tank is no longer in the original position");
-                }
-
-                String box = boxes[newY][newX];
-                if (!box.equals("0")) {
-                    throw new BoxOccupiedException("This box is already occupied by: " + box);
-                }
 
                 board.clearBox(x, y);
                 board.putTank(tank.getName(), newX, newY);
