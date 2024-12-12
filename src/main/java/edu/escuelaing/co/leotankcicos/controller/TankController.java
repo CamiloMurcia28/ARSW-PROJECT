@@ -37,7 +37,7 @@ public class TankController {
 
     @GetMapping("/")
     public ResponseEntity<Void> ok(){
-        return new ResponseEntity(HttpStatus.OK);
+        return ResponseEntity.ok().build();
     }
 
     //Crea los tanques
