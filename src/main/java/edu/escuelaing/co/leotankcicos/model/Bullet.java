@@ -19,7 +19,6 @@ public class Bullet {
         this.x = x;
         this.y = y;
         this.direction = direction;
-        this.alive = alive;
         this.tankId = tankId;
     }
 
